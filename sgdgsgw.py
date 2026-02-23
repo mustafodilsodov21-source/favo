@@ -14,7 +14,7 @@ router = Router()
 @router.message(F.text == "/start")
 async def start(message: Message):
     await message.answer(
-        "▶️Нажми кнопку, чтобы отправить номер телефона",
+        "▶️Нажми кнопку, чтобы отправить номер телефона ок",
         reply_markup=phone_keyboard()
     )
 
