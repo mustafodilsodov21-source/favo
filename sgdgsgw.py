@@ -4,8 +4,9 @@ from wsadfsd import mood_keyboard
 import asyncio
 import logging
 import random
+import os
 
-TOKEN = "8255670538:AAHPIcZX1-LKHPYT3uuP9s5EM_qioaVjYbo"
+TOKEN = os.getenv("BOT_TOKEN")
 
 bot = Bot(TOKEN)
 dp = Dispatcher()
