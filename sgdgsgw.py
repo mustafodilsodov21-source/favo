@@ -7,9 +7,10 @@ import logging
 import random
 
 
-bot = Bot(token=TOKEN)
+bot = Bot(str(TOKEN))
 dp = Dispatcher()
 router = Router()
+print(TOKEN)
 
 quotes = {
     "грустно": [
