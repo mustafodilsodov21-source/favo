@@ -1,9 +1,9 @@
+from aiogram import Bot, Dispatcher, Router, F
+from aiogram.types import Message, CallbackQuery
+from wsadfsd import mood_keyboard
 import asyncio
 import logging
-
-from aiogram import Bot, Dispatcher, F, Router
-from aiogram.types import Message
-from wsadfsd import phone_keyboard
+import random
 
 TOKEN = "8255670538:AAHPIcZX1-LKHPYT3uuP9s5EM_qioaVjYbo"
 
@@ -11,25 +11,70 @@ bot = Bot(TOKEN)
 dp = Dispatcher()
 router = Router()
 
+quotes = {
+    "грустно": [
+        "Иногда грусть — это просто усталость души.",
+        "Даже самые сильные иногда молча плачут.",
+        "Грусть приходит, когда слова заканчиваются."
+    ],
+    "плохо": [
+        "Плохие дни не делают плохую жизнь.",
+        "Это состояние пройдёт, как и всё.",
+        "Иногда нужно просто переждать."
+    ],
+    "печально": [
+        "Печаль — тень чувств.",
+        "Даже тишина иногда кричит.",
+        "Сердце знает, но молчит."
+    ],
+    "тяжело": [
+        "Ты держишься сильнее, чем думаешь.",
+        "Тяжело — не значит навсегда.",
+        "Ты не один в этом."
+    ],
+    "одиноко": [
+        "Одиночество — когда никто не слышит.",
+        "Иногда даже среди людей пусто.",
+        "Тишина бывает слишком громкой."
+    ],
+    "пусто": [
+        "Пустота тоже чувство.",
+        "Когда внутри пусто — просто подожди.",
+        "Пустота не вечна."
+    ],
+    "не по себе": [
+        "Иногда не нужно объяснений.",
+        "Просто переживи этот момент.",
+        "Это чувство пройдёт."
+    ],
+    "на душе тяжело": [
+        "Душа тоже устаёт.",
+        "Ты не обязан быть сильным всегда.",
+        "Дай себе время."
+    ],
+    "помолчать": [
+        "Иногда молчание — лучший ответ.",
+        "Тишина лечит.",
+        "Просто будь."
+    ]
+}
+
+
 @router.message(F.text == "/start")
 async def start(message: Message):
     await message.answer(
-        "▶️Нажми кнопку, чтобы отправить номер телефона ок",
-        reply_markup=phone_keyboard()
+        "Как ты себя чувствуешь?",
+        reply_markup=mood_keyboard()
     )
 
 
-@router.message(F.contact)
-async def get_phone(message: Message):
-    phone = message.contact.phone_number
-    user = message.from_user.full_name
+@router.callback_query()
+async def callback_handler(callback: CallbackQuery):
+    mood = callback.data
+    text = random.choice(quotes[mood])
 
-
-    print(f"Имя: {user}, Номер: {phone}")
-
-    await message.answer(
-        f"Спасибо! Я получил твой номер:\n{phone}"
-    )
+    await callback.message.answer(text)
+    await callback.answer()
 
 
 async def main():
