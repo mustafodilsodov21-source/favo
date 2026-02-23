@@ -7,7 +7,7 @@ import logging
 import random
 
 
-bot = Bot(str(TOKEN))
+bot = Bot(token=TOKEN)
 dp = Dispatcher()
 router = Router()
 print(TOKEN)
