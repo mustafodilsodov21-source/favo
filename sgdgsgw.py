@@ -1,15 +1,13 @@
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.types import Message, CallbackQuery
 from wsadfsd import mood_keyboard
+from data import TOKEN
 import asyncio
 import logging
 import random
-import os
-from dotenv import load_dotenv
-load_dotenv()
-TOKEN = os.getenv("BOT_TOKEN")
 
-bot = Bot(TOKEN)
+
+bot = Bot(token=TOKEN)
 dp = Dispatcher()
 router = Router()
 
