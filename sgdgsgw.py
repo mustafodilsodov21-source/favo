@@ -1,86 +1,105 @@
-from aiogram import Bot, Dispatcher, Router, F
-from aiogram.types import Message, CallbackQuery
-from wsadfsd import mood_keyboard
-from data import TOKEN
-import asyncio
-import logging
-import random
 
+from aiogram import Bot, Dispatcher, Router, F
+from aiogram.types import Message
+from aiogram.filters import Command
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.context import FSMContext
+
+from data import TOKEN
+from wsadfsd import main_kb
+import database as db
+
+import asyncio
+import hashlib
+import logging
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 router = Router()
 print(TOKEN)
 
-quotes = {
-    "грустно": [
-        "Иногда грусть — это просто усталость души.",
-        "Даже самые сильные иногда молча плачут.",
-        "Грусть приходит, когда слова заканчиваютася."
-    ],
-    "плохо": [
-        "Плохие дни не делают плохую жизнь.",
-        "Это состояние пройдёт, как и всё.",
-        "Иногда нужно просто переждать."
-    ],
-    "печально": [
-        "Печаль — тень чувств.",
-        "Даже тишина иногда кричит.",
-        "Сердце знает, но молчит."
-    ],
-    "тяжело": [
-        "Ты держишься сильнее, чем думаешь.",
-        "Тяжело — не значит навсегда.",
-        "Ты не один в этом."
-    ],
-    "одиноко": [
-        "Одиночество — когда никто не слышит.",
-        "Иногда даже среди людей пусто.",
-        "Тишина бывает слишком громкой."
-    ],
-    "пусто": [
-        "Пустота тоже чувство.",
-        "Когда внутри пусто — просто подожди.",
-        "Пустота не вечна."
-    ],
-    "не по себе": [
-        "Иногда не нужно объяснений.",
-        "Просто переживи этот момент.",
-        "Это чувство пройдёт."
-    ],
-    "на душе тяжело": [
-        "Душа тоже устаёт.",
-        "Ты не обязан быть сильным всегда.",
-        "Дай себе время."
-    ],
-    "помолчать": [
-        "Иногда молчание — лучший ответ.",
-        "Тишина лечит.",
-        "Просто будь."
-    ]
-}
 
 
-@router.message(F.text == "/start")
-async def start(message: Message):
-    await message.answer(
-        "Как ты себя чувствуешь?",
-        reply_markup=mood_keyboard()
+def hash_password(password: str):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+
+class AuthState(StatesGroup):
+    waiting_password = State()
+
+
+
+@router.message(Command("start"))
+async def start_handler(message: Message):
+    await message.answer("Добро пожаловать 👋", reply_markup=main_kb)
+
+
+
+@router.message(F.text == "📝 Регистрация")
+async def register_handler(message: Message, state: FSMContext):
+    user = await db.get_user(message.from_user.id)
+    if user:
+        await message.answer("Ты уже зарегистрирован.")
+        return
+
+    await message.answer("Введите пароль:")
+    await state.set_state(AuthState.waiting_password)
+
+
+@router.message(AuthState.waiting_password)
+async def process_register(message: Message, state: FSMContext):
+    user = await db.get_user(message.from_user.id)
+
+    if not user:
+        password = hash_password(message.text)
+        await db.create_user(message.from_user.id, password)
+        await message.answer("Регистрация успешна ✅", reply_markup=main_kb)
+    else:
+        if user[1] == hash_password(message.text):
+            await db.login_user(message.from_user.id)
+            await message.answer("Вход выполнен ✅", reply_markup=main_kb)
+        else:
+            await message.answer("Неверный пароль ❌")
+
+    await state.clear()
+
+
+
+@router.message(F.text == "🔐 Вход")
+async def login_handler(message: Message, state: FSMContext):
+    await message.answer("Введите пароль:")
+    await state.set_state(AuthState.waiting_password)
+
+
+
+@router.message(F.text == "👤 Профиль")
+async def profile_handler(message: Message):
+    user = await db.get_user(message.from_user.id)
+
+    if not user:
+        await message.answer("Ты не зарегистрирован.")
+        return
+
+    text = (
+        f"ID: {user[0]}\n"
+        f"Авторизация: {'Да' if user[2] else 'Нет'}"
     )
+    await message.answer(text)
 
 
-@router.callback_query()
-async def callback_handler(callback: CallbackQuery):
-    mood = callback.data
-    text = random.choice(quotes[mood])
 
-    await callback.message.answer(text)
-    await callback.answer()
+@router.message(F.text == "🚪 Выход")
+async def logout_handler(message: Message):
+    await db.logout_user(message.from_user.id)
+    await message.answer("Ты вышел 🚪")
+
 
 
 async def main():
-    dp.include_router(router)
     logging.basicConfig(level=logging.INFO)
+    await db.init_db()
+    dp.include_router(router)
     await dp.start_polling(bot)
 
 

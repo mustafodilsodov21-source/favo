@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+DB_NAME = "users.db"
 TOKEN = os.getenv("BOT_TOKEN")
 
 if not TOKEN:
