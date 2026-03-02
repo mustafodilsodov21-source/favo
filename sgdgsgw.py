@@ -2,16 +2,21 @@
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.types import Message
 from aiogram.filters import Command
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-
+from aiogram.fsm.state import StatesGroup, State
 from data import TOKEN
 from wsadfsd import main_kb
-import database as db
 
+import database as db
 import asyncio
 import hashlib
 import logging
+import aiosqlite
+from database import DB_NAME
+async def create_database():
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute()
+        await db.commit()
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -75,17 +80,6 @@ async def login_handler(message: Message, state: FSMContext):
 
 @router.message(F.text == "👤 Профиль")
 async def profile_handler(message: Message):
-    user = await db.get_user(message.from_user.id)
-
-    if not user:
-        await message.answer("Ты не зарегистрирован.")
-        return
-
-    text = (
-        f"ID: {user[0]}\n"
-        f"Авторизация: {'Да' if user[2] else 'Нет'}"
-    )
-    await message.answer(text)
 
 
 
@@ -98,7 +92,6 @@ async def logout_handler(message: Message):
 
 async def main():
     logging.basicConfig(level=logging.INFO)
-    await db.init_db()
     dp.include_router(router)
     await dp.start_polling(bot)
 

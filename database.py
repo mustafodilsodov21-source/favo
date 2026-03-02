@@ -1,11 +1,4 @@
-import aiosqlite
-from data import DB_NAME
-async def create_database():
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute()
-        await db.commit()
-
-
+DB_NAME = "users.db"
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("""
