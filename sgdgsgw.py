@@ -1,22 +1,17 @@
-
-from aiogram import Bot, Dispatcher, Router, F
 from aiogram.types import Message
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
-from data import TOKEN
-from wsadfsd import main_kb
+from aiogram import Dispatcher, Bot, Router
 
-import database as db
-import asyncio
-import hashlib
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
+
+from data import TOKEN
+
+
 import logging
-import aiosqlite
-from database import DB_NAME
-async def create_database():
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute()
-        await db.commit()
+import asyncio
+
+
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -24,70 +19,61 @@ router = Router()
 print(TOKEN)
 
 
-
-def hash_password(password: str):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-
-
-class AuthState(StatesGroup):
-    waiting_password = State()
+class RegisterUser(StatesGroup):
+    name = State()
+    phone = State()
+    email = State()
 
 
 
-@router.message(Command("start"))
-async def start_handler(message: Message):
-    await message.answer("Добро пожаловать 👋", reply_markup=main_kb)
+
+@router.message(Command('start'))
+async def start(message: Message, state: FSMContext):
+    await message.answer(
+        text='What is your name?',
+    )
+    await state.set_state(RegisterUser.name)
 
 
-
-@router.message(F.text == "📝 Регистрация")
-async def register_handler(message: Message, state: FSMContext):
-    user = await db.get_user(message.from_user.id)
-    if user:
-        await message.answer("Ты уже зарегистрирован.")
-        return
-
-    await message.answer("Введите пароль:")
-    await state.set_state(AuthState.waiting_password)
+@router.message(RegisterUser.name)
+async def name_function(message: Message, state: FSMContext):
+    user_name = message.text
+    await state.update_data(name=user_name)
+    await message.answer(
+        text='What is your phone: ',
+    )
+    await state.set_state(RegisterUser.phone)
 
 
-@router.message(AuthState.waiting_password)
-async def process_register(message: Message, state: FSMContext):
-    user = await db.get_user(message.from_user.id)
+@router.message(RegisterUser.phone)
+async def phone_function(message: Message, state: FSMContext):
+    user_phone = message.text
+    await state.update_data(phone=user_phone)
+    await message.answer(
+        text='What is your email: ',
+    )
+    await state.set_state(RegisterUser.email)
 
-    if not user:
-        password = hash_password(message.text)
-        await db.create_user(message.from_user.id, password)
-        await message.answer("Регистрация успешна ✅", reply_markup=main_kb)
-    else:
-        if user[1] == hash_password(message.text):
-            await db.login_user(message.from_user.id)
-            await message.answer("Вход выполнен ✅", reply_markup=main_kb)
-        else:
-            await message.answer("Неверный пароль ❌")
 
+@router.message(RegisterUser.email)
+async def email_function(message: Message, state: FSMContext):
+    user_email = message.text
+    await state.update_data(email=user_email)
+    data = await state.get_data()
+    name = data.get('name')
+    phone = data.get('phone')
+    email = data.get('email')
+    msg = f"""
+    Your data:
+
+    name: {name}
+    phone: {phone}
+    email: {email}
+    """
+    await message.answer(
+        text=msg,
+    )
     await state.clear()
-
-
-
-@router.message(F.text == "🔐 Вход")
-async def login_handler(message: Message, state: FSMContext):
-    await message.answer("Введите пароль:")
-    await state.set_state(AuthState.waiting_password)
-
-
-
-@router.message(F.text == "👤 Профиль")
-async def profile_handler(message: Message):
-
-
-
-@router.message(F.text == "🚪 Выход")
-async def logout_handler(message: Message):
-    await db.logout_user(message.from_user.id)
-    await message.answer("Ты вышел 🚪")
-
 
 
 async def main():
