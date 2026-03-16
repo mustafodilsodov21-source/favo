@@ -13,9 +13,7 @@ from inactive_notifier import start_inactive_checker, users_activity
 import os
 from dotenv import load_dotenv
 
-# --------------------
-# Загружаем .env
-# --------------------
+
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
 PROVIDER_TOKEN = os.getenv("PROVIDER_TOKEN")
