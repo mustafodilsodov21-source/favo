@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
-TOKEN = os.getenv("BOT_TOKENCLS")
+TOKEN = os.getenv("BOT_TOKEN")
 PROVIDER_TOKEN = os.getenv("PROVIDER_TOKEN")
 MANAGER_USERNAME = os.getenv("MANAGER_USERNAME")
 
